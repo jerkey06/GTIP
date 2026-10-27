@@ -1,0 +1,4 @@
+# Normaliza finales de línea para que Windows, Mac y Linux no generen diffs falsos
+* text=auto eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
