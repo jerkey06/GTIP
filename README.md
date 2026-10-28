@@ -4,6 +4,7 @@ Plataforma web que centraliza inteligencia pública de amenazas (CISA KEV, NVD, 
 
 - Requisitos de producto: [docs/PRD — GTIP.md](docs/PRD%20—%20GTIP.md)
 - Arquitectura: [docs/ADD — GTIP.md](docs/ADD%20—%20GTIP.md)
+- Pantallas del frontend: [docs/UI — GTIP.md](docs/UI%20—%20GTIP.md)
 - Plan de trabajo del equipo: [docs/PLAN-EQUIPO.md](docs/PLAN-EQUIPO.md)
 - Cómo trabajar con Git: [CONTRIBUTING.MD](CONTRIBUTING.MD)
 
