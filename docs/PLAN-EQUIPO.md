@@ -22,10 +22,10 @@ Asigna una persona responsable por área. Si son menos de cuatro, juntad áreas 
 
 | Área | Responsable | Contenido |
 |---|---|---|
-| A. Núcleo backend | _por asignar_ | Configuración, modelos SQLAlchemy, migraciones Alembic, repositorios, autenticación JWT/Argon2 |
-| B. Conectores e ingesta | _por asignar_ | Conectores CISA KEV, NVD, URLhaus; normalización y deduplicación; worker y APScheduler; `ingestion_jobs` |
-| C. API y búsqueda | _por asignar_ | Endpoints `/api/v1/*`, paginación, filtros, errores, dashboard summary |
-| D. Frontend | _por asignar_ | Login, navegación, dashboard, vulnerabilidades, buscador IOC, fuentes, historial |
+| A. Núcleo backend | Emiliano Ponce | Configuración, modelos SQLAlchemy, migraciones Alembic, repositorios, autenticación JWT/Argon2 |
+| B. Conectores e ingesta | Vanessa Vera | Conectores CISA KEV, NVD, URLhaus; normalización y deduplicación; worker y APScheduler; `ingestion_jobs` |
+| C. API y búsqueda | Eder Ramirez | Endpoints `/api/v1/*`, paginación, filtros, errores, dashboard summary |
+| D. Frontend | Fabienne Oliva, Brisseida Muñoz | Login, navegación, dashboard, vulnerabilidades, buscador IOC, fuentes, historial |
 | Transversal | todos | Pruebas de lo que cada uno programa, documentación de su módulo |
 
 ## Calendario (del ADD §19, en paralelo)
