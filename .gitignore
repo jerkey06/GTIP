@@ -17,6 +17,9 @@ node_modules/
 dist/
 *.local
 
+# Caché local del CLI de Cloudflare
+.cloudflare/
+
 # Editores y SO
 .idea/
 .DS_Store
