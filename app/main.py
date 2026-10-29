@@ -14,7 +14,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    version=settings.VERSION,
+    version="1.1.0",  # <--VERSION
+    description="Designed by: Alquimia Tech",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan
 )
