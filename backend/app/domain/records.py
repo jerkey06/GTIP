@@ -17,6 +17,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.domain.enums import IndicatorType
+from app.domain.indicators import normalize
 
 CVE_ID_PATTERN = re.compile(r"^CVE-\d{4}-\d{4,}$")
 
@@ -35,6 +36,16 @@ class VulnerabilityRecord(BaseModel):
     # del catálogo (PRD §9.2).
     is_known_exploited: bool | None = None
     kev_added_at: date | None = None
+    # Datos del catálogo KEV (PRD §6.1). La descripción corta de KEV va aparte para que
+    # no se alterne con la completa de NVD en cada sincronización.
+    kev_short_description: str | None = None
+    kev_vendor_project: str | None = Field(default=None, max_length=255)
+    kev_product: str | None = Field(default=None, max_length=255)
+    kev_vulnerability_name: str | None = None
+    kev_required_action: str | None = None
+    kev_due_date: date | None = None
+    # Referencias técnicas de NVD: [{"url": ..., "source": ..., "tags": [...]}].
+    nvd_references: list[dict[str, Any]] | None = None
 
     @field_validator("cve_id")
     @classmethod
@@ -55,6 +66,18 @@ class IndicatorRecord(BaseModel):
     normalized_value: str = Field(min_length=1)
     first_seen_at: datetime | None = None
     last_seen_at: datetime | None = None
+
+    @classmethod
+    def from_value(
+        cls, indicator_type: IndicatorType, value: str, **dates: datetime | None
+    ) -> "IndicatorRecord":
+        """Crea el registro normalizando el valor. Lanza ``InvalidIndicatorError``."""
+        return cls(
+            indicator_type=indicator_type,
+            value=value.strip(),
+            normalized_value=normalize(indicator_type, value),
+            **dates,
+        )
 
 
 class ObservationRecord(BaseModel):

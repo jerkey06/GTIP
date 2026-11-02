@@ -18,14 +18,31 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     cisa_kev_enabled: bool = True
+    nvd_enabled: bool = True
     urlhaus_enabled: bool = True
     nvd_api_key: str | None = None
+    # abuse.ch pide una Auth-Key gratuita para algunas descargas; opcional.
+    urlhaus_auth_key: str | None = None
     abuseipdb_api_key: str | None = None
     otx_api_key: str | None = None
 
     ingestion_poll_interval_seconds: int = 10
     ingestion_max_retries: int = 3
+    # Frecuencias conservadoras por fuente, en minutos (ADD §8.4). 0 desactiva la planificación.
+    cisa_kev_interval_minutes: int = 720
+    nvd_interval_minutes: int = 120
+    urlhaus_interval_minutes: int = 60
+    # Primera sincronización de NVD: cuántos días hacia atrás (máximo 120 por petición).
+    nvd_initial_days: int = 7
+    # Una ejecución en running más tiempo que esto se considera abandonada (ADD §13.4).
+    ingestion_stale_after_minutes: int = 60
+    http_timeout_seconds: float = 30.0
     log_level: str = "INFO"
+
+    # Carpeta con el frontend compilado para servirlo junto a la API (ADR-04). Opcional.
+    frontend_dist_dir: str | None = None
+    # Intentos de login permitidos por IP y minuto antes de responder 429.
+    login_rate_limit_per_minute: int = 10
 
     @property
     def is_production(self) -> bool:
@@ -38,6 +55,8 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL es obligatoria.")
         if self.access_token_expire_minutes <= 0:
             raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES debe ser mayor que 0.")
+        if not 1 <= self.nvd_initial_days <= 120:
+            raise ValueError("NVD_INITIAL_DAYS debe estar entre 1 y 120.")
         if self.is_production and (
             self.app_secret_key in INSECURE_SECRET_KEYS or len(self.app_secret_key) < 32
         ):

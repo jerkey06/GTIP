@@ -8,6 +8,8 @@ export default defineConfig({
     // En desarrollo, /api se reenvía a FastAPI para evitar configurar CORS (ADR-04).
     proxy: {
       '/api': 'http://localhost:8000',
+      '/docs': 'http://localhost:8000',
+      '/openapi.json': 'http://localhost:8000',
     },
   },
 })

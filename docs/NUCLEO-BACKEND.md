@@ -43,7 +43,7 @@ alembic/                  Migraciones
 | `abuseipdb` | no (opcional) |
 | `otx` | no (opcional) |
 
-`ingestion_jobs` no está incluida: pertenece al área B (worker). Quien la cree debe hacer una migración nueva encima de `0001` y avisar en el canal antes (una sola persona genera migraciones a la vez).
+`ingestion_jobs` no existe como tabla aparte: la migración `0002` convierte `ingestion_runs` también en la cola de solicitudes (`pending` → `running` → estado final), con `requested_by_id`, `requested_at` y `claimed_at`. La misma migración añade los campos KEV y las referencias de NVD a `vulnerabilities`. Detalles en [INGESTA-API-FRONTEND.md](INGESTA-API-FRONTEND.md).
 
 ## Para el área B (conectores e ingesta)
 

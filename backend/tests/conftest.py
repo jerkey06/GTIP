@@ -51,6 +51,13 @@ def pg_engine() -> Iterator[Engine]:
     command.downgrade(config, "base")
 
 
+@pytest.fixture(autouse=True)
+def _reset_login_limiter() -> None:
+    from app.core.rate_limit import login_limiter
+
+    login_limiter.reset()
+
+
 @pytest.fixture
 def db_session(pg_engine: Engine) -> Iterator[Session]:
     """Sesión dentro de una transacción que se deshace al final de cada prueba.
