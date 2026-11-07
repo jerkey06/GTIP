@@ -1,7 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
+import { ClerkProvider } from '@clerk/clerk-react'
 import { AuthProvider } from './auth/AuthProvider'
+import { CLERK_PUBLISHABLE_KEY } from './auth/clerk'
+import { ClerkAuthProvider } from './auth/ClerkAuthProvider'
 import { RequireAuth } from './auth/RequireAuth'
 import '@fontsource/habibi/400.css'
 import '@fontsource/hind-vadodara/400.css'
@@ -58,8 +61,16 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    {CLERK_PUBLISHABLE_KEY ? (
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} afterSignOutUrl="/login">
+        <ClerkAuthProvider>
+          <RouterProvider router={router} />
+        </ClerkAuthProvider>
+      </ClerkProvider>
+    ) : (
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    )}
   </StrictMode>,
 )

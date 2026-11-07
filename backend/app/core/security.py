@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
+from jwt import PyJWKClient
 
 from app.core.config import get_settings
 
@@ -66,3 +67,42 @@ def decode_access_token(token: str) -> str:
     if payload.get("type") != "access":
         raise InvalidTokenError("Tipo de token inválido")
     return payload["sub"]
+
+
+_jwks_clients: dict[str, PyJWKClient] = {}
+
+
+def _jwks_client(issuer: str) -> PyJWKClient:
+    """Cliente JWKS por emisor; PyJWKClient guarda en caché las claves públicas de Clerk."""
+    if issuer not in _jwks_clients:
+        _jwks_clients[issuer] = PyJWKClient(f"{issuer}/.well-known/jwks.json", lifespan=3600)
+    return _jwks_clients[issuer]
+
+
+def decode_clerk_token(token: str) -> dict:
+    """Valida un token de sesión de Clerk (RS256, emisor, expiración y origen autorizado).
+
+    Devuelve las claims; ``sub`` es el id estable del usuario en Clerk.
+    """
+    settings = get_settings()
+    issuer = settings.clerk_issuer_url
+    if issuer is None:
+        raise InvalidTokenError("Clerk no está configurado")
+    try:
+        signing_key = _jwks_client(issuer).get_signing_key_from_jwt(token)
+        claims = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            issuer=issuer,
+            options={"require": ["sub", "exp", "iat"], "verify_aud": False},
+        )
+    except jwt.PyJWTError as exc:
+        raise InvalidTokenError(str(exc)) from exc
+
+    # ``azp`` es el origen que pidió el token; evita aceptar tokens emitidos para otro sitio.
+    allowed = {settings.public_url.rstrip("/"), "http://localhost:5173"}
+    azp = claims.get("azp")
+    if azp is not None and azp.rstrip("/") not in allowed:
+        raise InvalidTokenError("Origen no autorizado (azp)")
+    return claims
