@@ -1,4 +1,4 @@
-import { SignIn } from '@clerk/clerk-react'
+import { SignIn, SignUp } from '@clerk/clerk-react'
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
@@ -49,7 +49,20 @@ const SOCIAL = [
   { key: 'github', label: 'Continuar con GitHub', Icon: GithubIcon },
 ] as const
 
-/** P-01 con Clerk: Google, GitHub o correo. La primera vez se crea la cuenta. */
+const CLERK_APPEARANCE = {
+  variables: {
+    colorPrimary: '#3b82f6',
+    colorBackground: '#131b2e',
+    colorText: '#f8fafc',
+    colorTextSecondary: '#94a3b8',
+    colorInputBackground: '#090d16',
+    colorInputText: '#f8fafc',
+    colorNeutral: '#f8fafc',
+    borderRadius: '8px',
+  },
+}
+
+/** P-01 con Clerk: Google, GitHub o correo. La primera vez se crea la cuenta (registro abierto). */
 function ClerkLoginPage() {
   const { status } = useAuth()
   const location = useLocation()
@@ -57,22 +70,30 @@ function ClerkLoginPage() {
   if (status === 'authenticated') return <Navigate to={from} replace />
   return (
     <div className="login-page">
+      {/* routing="path": Clerk necesita /login/* y /registro/* para pasar de entrar a registrarse. */}
       <SignIn
-        routing="hash"
+        routing="path"
+        path="/login"
+        signUpUrl="/registro"
         forceRedirectUrl={from}
-        signUpForceRedirectUrl={from}
-        appearance={{
-          variables: {
-            colorPrimary: '#3b82f6',
-            colorBackground: '#131b2e',
-            colorText: '#f8fafc',
-            colorTextSecondary: '#94a3b8',
-            colorInputBackground: '#090d16',
-            colorInputText: '#f8fafc',
-            colorNeutral: '#f8fafc',
-            borderRadius: '8px',
-          },
-        }}
+        appearance={CLERK_APPEARANCE}
+      />
+    </div>
+  )
+}
+
+/** Registro con Clerk (también lo usa Clerk al entrar por primera vez con Google o GitHub). */
+export function ClerkSignUpPage() {
+  const { status } = useAuth()
+  if (status === 'authenticated') return <Navigate to="/" replace />
+  return (
+    <div className="login-page">
+      <SignUp
+        routing="path"
+        path="/registro"
+        signInUrl="/login"
+        forceRedirectUrl="/"
+        appearance={CLERK_APPEARANCE}
       />
     </div>
   )

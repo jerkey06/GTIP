@@ -22,7 +22,7 @@ import { IndicatorDetailPage } from './pages/IndicatorDetailPage'
 import { IndicatorsPage } from './pages/IndicatorsPage'
 import { IngestionDetailPage } from './pages/IngestionDetailPage'
 import { IngestionsPage } from './pages/IngestionsPage'
-import { LoginPage } from './pages/LoginPage'
+import { ClerkSignUpPage, LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { SearchPage } from './pages/SearchPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -33,7 +33,8 @@ import { VulnerabilityDetailPage } from './pages/VulnerabilityDetailPage'
 
 // Mapa de pantallas del UI §2.
 const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login/*', element: <LoginPage /> },
+  { path: '/registro/*', element: CLERK_PUBLISHABLE_KEY ? <ClerkSignUpPage /> : <NotFoundPage /> },
   { path: '/auth/callback', element: <AuthCallbackPage /> },
   {
     element: <RequireAuth />,
