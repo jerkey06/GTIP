@@ -1,7 +1,7 @@
 # Cabeceras de Cloudflare Pages: https://developers.cloudflare.com/pages/configuration/headers/
 
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://*.clerk.accounts.dev https://cdn.protect.clerk.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://img.clerk.com; font-src 'self'; connect-src 'self' https://*.clerk.accounts.dev https://*.protect.clerk.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
