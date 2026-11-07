@@ -48,9 +48,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('authenticated')
   }, [])
 
+  const loginWithToken = useCallback(async (accessToken: string) => {
+    setToken(accessToken)
+    try {
+      const me = await getMe()
+      setUser(me)
+    } catch (error) {
+      setToken(null)
+      throw error
+    }
+    setNotice(null)
+    setStatus('authenticated')
+  }, [])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user, notice, login, logout }),
-    [status, user, notice, login, logout],
+    () => ({ status, user, notice, login, loginWithToken, logout }),
+    [status, user, notice, login, loginWithToken, logout],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

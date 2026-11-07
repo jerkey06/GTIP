@@ -9,6 +9,8 @@ export interface AuthContextValue {
   /** Mensaje para la pantalla de login (p. ej. sesión caducada). */
   notice: string | null
   login: (username: string, password: string) => Promise<void>
+  /** Cierra el login social: guarda el token que entregó la API y carga el perfil. */
+  loginWithToken: (accessToken: string) => Promise<void>
   logout: (notice?: string) => void
 }
 

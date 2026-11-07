@@ -132,3 +132,19 @@ Las copias se guardan en `backups/`, que está excluida de Git. El volumen de Do
 
 - Python: `uv add <paquete>` (o `uv add --dev <paquete>`). Sube también `uv.lock`.
 - Frontend: `npm install <paquete>`. Sube también `package-lock.json`.
+
+## Inicio de sesión con Google y GitHub
+
+Además de usuario y contraseña, la plataforma permite entrar con Google o GitHub. La primera vez
+que alguien entra con uno de ellos se crea su cuenta (registro abierto). Cada proveedor se activa
+al definir sus variables; sin ellas el botón no aparece.
+
+1. **Google:** en Google Cloud Console → APIs y servicios → Credenciales → *ID de cliente de OAuth*
+   (aplicación web). URI de redirección autorizado: `{PUBLIC_URL}/api/v1/auth/oauth/google/callback`.
+2. **GitHub:** Settings → Developer settings → OAuth Apps → *New OAuth App*. Authorization callback
+   URL: `{PUBLIC_URL}/api/v1/auth/oauth/github/callback`.
+3. En el backend define `PUBLIC_URL` (dirección pública del sitio, la del frontend),
+   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID` y `GITHUB_CLIENT_SECRET`
+   (ver `.env.example`) y aplica la migración con `alembic upgrade head`.
+
+Las cuentas sociales no tienen contraseña y no se enlazan con cuentas de contraseña existentes.

@@ -19,6 +19,8 @@ class UserRead(BaseModel):
 
     id: int
     username: str
+    email: str | None = None
+    auth_provider: str = "password"
     is_active: bool
     created_at: datetime
     last_login_at: datetime | None
