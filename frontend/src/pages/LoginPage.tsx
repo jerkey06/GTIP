@@ -1,7 +1,9 @@
+import { SignIn } from '@clerk/clerk-react'
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { getAuthProviders, type AuthProviders } from '../api/endpoints'
+import { CLERK_PUBLISHABLE_KEY } from '../auth/clerk'
 import { useAuth } from '../auth/context'
 import { errorMessage } from '../lib/errors'
 
@@ -47,8 +49,41 @@ const SOCIAL = [
   { key: 'github', label: 'Continuar con GitHub', Icon: GithubIcon },
 ] as const
 
-/** P-01. Entra con usuario y contraseña o con Google/GitHub (la primera vez crea la cuenta). */
+/** P-01 con Clerk: Google, GitHub o correo. La primera vez se crea la cuenta. */
+function ClerkLoginPage() {
+  const { status } = useAuth()
+  const location = useLocation()
+  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  if (status === 'authenticated') return <Navigate to={from} replace />
+  return (
+    <div className="login-page">
+      <SignIn
+        routing="hash"
+        forceRedirectUrl={from}
+        signUpForceRedirectUrl={from}
+        appearance={{
+          variables: {
+            colorPrimary: '#3b82f6',
+            colorBackground: '#131b2e',
+            colorText: '#f8fafc',
+            colorTextSecondary: '#94a3b8',
+            colorInputBackground: '#090d16',
+            colorInputText: '#f8fafc',
+            colorNeutral: '#f8fafc',
+            borderRadius: '8px',
+          },
+        }}
+      />
+    </div>
+  )
+}
+
+/** P-01. Con Clerk configurado usa su pantalla; si no, usuario y contraseña o Google/GitHub. */
 export function LoginPage() {
+  return CLERK_PUBLISHABLE_KEY ? <ClerkLoginPage /> : <PasswordLoginPage />
+}
+
+function PasswordLoginPage() {
   const { status, login, notice } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

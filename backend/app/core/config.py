@@ -1,3 +1,4 @@
+import base64
 from functools import lru_cache
 
 from pydantic import field_validator, model_validator
@@ -25,6 +26,11 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     github_client_id: str | None = None
     github_client_secret: str | None = None
+
+    # Clerk (login con Google, GitHub o correo). La clave publicable es pública; de ella se
+    # deduce el emisor de los tokens. CLERK_ISSUER permite fijarlo a mano (p. ej. dominio propio).
+    clerk_publishable_key: str | None = None
+    clerk_issuer: str | None = None
 
     cisa_kev_enabled: bool = True
     nvd_enabled: bool = True
@@ -61,6 +67,21 @@ class Settings(BaseSettings):
             if value.startswith(prefix):
                 return "postgresql+psycopg://" + value[len(prefix) :]
         return value
+
+    @property
+    def clerk_issuer_url(self) -> str | None:
+        """URL del emisor (Frontend API de Clerk), o None si Clerk no está configurado."""
+        if self.clerk_issuer:
+            return self.clerk_issuer.rstrip("/")
+        key = self.clerk_publishable_key
+        if not key:
+            return None
+        try:
+            encoded = key.split("_", 2)[2]
+            domain = base64.b64decode(encoded + "=" * (-len(encoded) % 4)).decode().rstrip("$")
+        except (IndexError, ValueError):
+            raise ValueError("CLERK_PUBLISHABLE_KEY no tiene un formato válido.") from None
+        return f"https://{domain}"
 
     @property
     def is_production(self) -> bool:

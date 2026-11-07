@@ -8,6 +8,8 @@ const TOKEN_KEY = 'gtip.token'
 // comparte entre pestañas (decisión del UI §3.2 / ADD §22.3). Nunca en localStorage.
 let token: string | null = readStoredToken()
 let onUnauthorized: (() => void) | null = null
+// Con Clerk el token de sesión dura ~60 s: se pide uno vigente en cada petición.
+let tokenProvider: (() => Promise<string | null>) | null = null
 
 function readStoredToken(): string | null {
   try {
@@ -29,6 +31,10 @@ export function setToken(value: string | null): void {
   } catch {
     // Sin almacenamiento (modo privado estricto): el token queda solo en memoria.
   }
+}
+
+export function setTokenProvider(provider: (() => Promise<string | null>) | null): void {
+  tokenProvider = provider
 }
 
 export function setUnauthorizedHandler(handler: (() => void) | null): void {
@@ -78,7 +84,10 @@ export async function request<T>(
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
-  if (options.auth !== false && token) headers.Authorization = `Bearer ${token}`
+  if (options.auth !== false) {
+    const bearer = tokenProvider ? await tokenProvider() : token
+    if (bearer) headers.Authorization = `Bearer ${bearer}`
+  }
 
   let response: Response
   try {

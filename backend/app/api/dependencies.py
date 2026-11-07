@@ -6,10 +6,12 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.core.security import InvalidTokenError, decode_access_token
+from app.core.config import get_settings
+from app.core.security import InvalidTokenError, decode_access_token, decode_clerk_token
 from app.db.session import get_db
 from app.models import User
 from app.repositories import users as users_repo
+from app.services import clerk as clerk_service
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -31,13 +33,19 @@ def get_current_user(
     """Exige un token válido y una cuenta activa. Úsala en cada endpoint protegido."""
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise _unauthorized()
+    token = credentials.credentials
+    user: User | None
     try:
-        subject = decode_access_token(credentials.credentials)
-        user_id = int(subject)
+        user = users_repo.get_by_id(db, int(decode_access_token(token)))
     except (InvalidTokenError, ValueError):
-        raise _unauthorized() from None
+        # No es un token de la API: puede ser una sesión de Clerk.
+        if get_settings().clerk_issuer_url is None:
+            raise _unauthorized() from None
+        try:
+            user = clerk_service.get_or_create_user(db, decode_clerk_token(token))
+        except InvalidTokenError:
+            raise _unauthorized() from None
 
-    user = users_repo.get_by_id(db, user_id)
     if user is None or not user.is_active:
         raise _unauthorized()
     return user

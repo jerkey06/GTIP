@@ -148,3 +148,19 @@ al definir sus variables; sin ellas el botón no aparece.
    (ver `.env.example`) y aplica la migración con `alembic upgrade head`.
 
 Las cuentas sociales no tienen contraseña y no se enlazan con cuentas de contraseña existentes.
+
+## Inicio de sesión con Clerk (recomendado)
+
+Clerk resuelve Google, GitHub y correo sin crear apps OAuth propias. Si está configurado, el
+login usa su pantalla y la API valida sus tokens de sesión (RS256, clave pública de Clerk); la
+cuenta local se crea la primera vez. Sin Clerk, la app sigue usando el login propio.
+
+1. Crea una aplicación en <https://dashboard.clerk.com> y activa Google y GitHub.
+2. Copia la **Publishable key** (`pk_test_…`) y defínela en dos sitios:
+   - frontend, al compilar: `VITE_CLERK_PUBLISHABLE_KEY` (Cloudflare Pages → Variables);
+   - backend: `CLERK_PUBLISHABLE_KEY` (Render → Environment). No hace falta la secret key.
+3. Vuelve a desplegar el frontend (la variable se lee al compilar) y el backend.
+
+Una instancia de desarrollo (`pk_test_`) funciona en `*.pages.dev` pero muestra una marca
+"Development mode". Para producción Clerk exige un dominio propio; en ese caso añade
+`CLERK_ISSUER=https://clerk.tu-dominio.com` y ajusta la CSP (`public/_headers`, `nginx.conf`).

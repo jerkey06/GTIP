@@ -164,7 +164,7 @@ def _slug(value: str) -> str:
     return slug[:48] or "usuario"
 
 
-def _unique_username(session: Session, wanted: str) -> str:
+def unique_username(session: Session, wanted: str) -> str:
     base = _slug(wanted)
     candidate = base
     while session.scalar(select(User.id).where(User.username == candidate)) is not None:
@@ -186,7 +186,7 @@ def get_or_create_user(session: Session, profile: Profile) -> User | None:
     )
     if user is None:
         user = User(
-            username=_unique_username(session, profile.suggested_username),
+            username=unique_username(session, profile.suggested_username),
             password_hash=None,
             email=profile.email,
             auth_provider=profile.provider,
