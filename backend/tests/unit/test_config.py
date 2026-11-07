@@ -27,3 +27,9 @@ def test_production_accepts_long_secret():
 def test_token_lifetime_must_be_positive():
     with pytest.raises(ValidationError):
         Settings(_env_file=None, access_token_expire_minutes=0)
+
+
+@pytest.mark.parametrize("scheme", ["postgres", "postgresql"])
+def test_database_url_from_provider_uses_psycopg_driver(scheme):
+    settings = Settings(_env_file=None, database_url=f"{scheme}://u:p@host:5432/db")
+    assert settings.database_url == "postgresql+psycopg://u:p@host:5432/db"

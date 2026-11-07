@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 INSECURE_SECRET_KEYS = {"", "change-me"}
@@ -52,6 +52,15 @@ class Settings(BaseSettings):
     frontend_dist_dir: str | None = None
     # Intentos de login permitidos por IP y minuto antes de responder 429.
     login_rate_limit_per_minute: int = 10
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_psycopg_driver(cls, value: str) -> str:
+        """Los proveedores (Render, Heroku…) entregan ``postgres://`` o ``postgresql://``."""
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value[len(prefix) :]
+        return value
 
     @property
     def is_production(self) -> bool:
