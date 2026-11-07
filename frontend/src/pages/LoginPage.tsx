@@ -45,7 +45,7 @@ export function LoginPage() {
     <div className="login-page">
       <form className="login-card" onSubmit={submit}>
         <div className="login-brand">
-          <img src="/favicon.svg" alt="" width="44" height="44" />
+          <img src="/logo.svg" alt="" width="34" height="52" />
           <div>
             <strong>GTIP</strong>
             <span>Global Threat Intelligence Platform</span>
