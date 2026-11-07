@@ -1,12 +1,14 @@
 from collections.abc import Iterable
+from dataclasses import dataclass
 
-from sqlalchemy import func, literal_column, select, tuple_
+from sqlalchemy import Select, exists, func, literal_column, select, tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.domain.enums import IndicatorType
 from app.domain.records import IndicatorRecord, ObservationRecord
 from app.models import Indicator, Observation
+from app.repositories._query import LIKE_ESCAPE, like_pattern
 from app.repositories._upsert import UpsertResult, chunks
 
 IndicatorKey = tuple[IndicatorType, str]
@@ -141,3 +143,104 @@ def _upsert_observation_batch(
         updated=len(inserted_flags) - created,
         unchanged=len(batch) - len(inserted_flags),
     )
+
+
+def get_by_id(session: Session, indicator_id: int) -> Indicator | None:
+    return session.get(Indicator, indicator_id)
+
+
+@dataclass(frozen=True)
+class IndicatorFilters:
+    indicator_type: IndicatorType | None = None
+    # Valor ya normalizado: búsqueda exacta (PRD §10.3).
+    normalized_value: str | None = None
+    # Texto libre cuando el valor no es un indicador completo: búsqueda parcial.
+    contains: str | None = None
+    source_id: int | None = None
+
+
+@dataclass(frozen=True)
+class IndicatorSummary:
+    indicator: Indicator
+    source_count: int
+    observation_count: int
+
+
+def _counts_subquery():
+    return (
+        select(
+            Observation.indicator_id,
+            func.count(func.distinct(Observation.source_id)).label("source_count"),
+            func.count(Observation.id).label("observation_count"),
+        )
+        .group_by(Observation.indicator_id)
+        .subquery()
+    )
+
+
+def _apply_filters(stmt: Select, f: IndicatorFilters) -> Select:
+    if f.indicator_type is not None:
+        stmt = stmt.where(Indicator.indicator_type == f.indicator_type)
+    if f.normalized_value is not None:
+        stmt = stmt.where(Indicator.normalized_value == f.normalized_value)
+    if f.contains:
+        stmt = stmt.where(
+            Indicator.normalized_value.ilike(like_pattern(f.contains.strip()), escape=LIKE_ESCAPE)
+        )
+    if f.source_id is not None:
+        stmt = stmt.where(
+            exists().where(
+                Observation.indicator_id == Indicator.id, Observation.source_id == f.source_id
+            )
+        )
+    return stmt
+
+
+def search_indicators(
+    session: Session, filters: IndicatorFilters, offset: int, limit: int
+) -> tuple[list[IndicatorSummary], int]:
+    """Página de indicadores, los vistos más recientemente primero, con sus contadores."""
+    total = session.scalar(_apply_filters(select(func.count(Indicator.id)), filters)) or 0
+    counts = _counts_subquery()
+    stmt = (
+        _apply_filters(
+            select(
+                Indicator,
+                func.coalesce(counts.c.source_count, 0),
+                func.coalesce(counts.c.observation_count, 0),
+            ).outerjoin(counts, counts.c.indicator_id == Indicator.id),
+            filters,
+        )
+        .order_by(
+            Indicator.last_seen_at.desc().nulls_last(),
+            Indicator.created_at.desc(),
+            Indicator.id.desc(),
+        )
+        .offset(offset)
+        .limit(limit)
+    )
+    rows = session.execute(stmt).all()
+    return [IndicatorSummary(row[0], row[1], row[2]) for row in rows], total
+
+
+def get_summary(session: Session, indicator_id: int) -> IndicatorSummary | None:
+    indicator = get_by_id(session, indicator_id)
+    if indicator is None:
+        return None
+    source_count, observation_count = session.execute(
+        select(func.count(func.distinct(Observation.source_id)), func.count(Observation.id)).where(
+            Observation.indicator_id == indicator_id
+        )
+    ).one()
+    return IndicatorSummary(indicator, source_count, observation_count)
+
+
+def list_observations(session: Session, indicator_id: int) -> list[Observation]:
+    """Todas las observaciones de un indicador con su fuente, agrupables por fuente."""
+    stmt = (
+        select(Observation)
+        .options(joinedload(Observation.source))
+        .where(Observation.indicator_id == indicator_id)
+        .order_by(Observation.source_id, Observation.observed_at.desc(), Observation.id.desc())
+    )
+    return list(session.scalars(stmt))

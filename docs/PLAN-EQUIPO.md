@@ -51,7 +51,7 @@ Al final de cada semana: merge de `dev` a `main` si el CI está en verde y el fl
 
 ## Decisiones a cerrar en la primera reunión
 
-El PRD y el ADD no coinciden en algunos detalles. Elegid una opción y actualizad el ADD:
+El PRD y el ADD no coinciden en algunos detalles. Las opciones implementadas están en [NUCLEO-BACKEND.md](NUCLEO-BACKEND.md) y [INGESTA-API-FRONTEND.md](INGESTA-API-FRONTEND.md); si el equipo elige otra, se cambia en un PR:
 
 1. **Tipo de ID:** UUID (PRD §9) o entero (ADD §10.2).
 2. **Estados de ingesta:** `success` (PRD §9.5) o `completed` + `pending` (ADD §8.3).

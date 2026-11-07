@@ -40,7 +40,13 @@ services:
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Ingestas periódicas (APScheduler) y manuales (solicitudes en PostgreSQL), ADR-02.
   worker:
     build: ./backend
     command: ["python", "-m", "app.ingestion.worker"]
@@ -50,6 +56,16 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    restart: unless-stopped
+
+  # Frontend compilado servido por nginx, que reenvía /api a la API.
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

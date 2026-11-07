@@ -7,6 +7,7 @@ Plataforma web que centraliza inteligencia pública de amenazas (CISA KEV, NVD, 
 - Pantallas del frontend: [docs/UI — GTIP.md](docs/UI%20—%20GTIP.md)
 - Plan de trabajo del equipo: [docs/PLAN-EQUIPO.md](docs/PLAN-EQUIPO.md)
 - Núcleo del backend (BD, repositorios, autenticación): [docs/NUCLEO-BACKEND.md](docs/NUCLEO-BACKEND.md)
+- Conectores, worker, API y frontend: [docs/INGESTA-API-FRONTEND.md](docs/INGESTA-API-FRONTEND.md)
 - Cómo trabajar con Git: [CONTRIBUTING.MD](CONTRIBUTING.MD)
 
 ## Estructura
@@ -14,7 +15,7 @@ Plataforma web que centraliza inteligencia pública de amenazas (CISA KEV, NVD, 
 ```text
 backend/    API FastAPI + worker de ingesta (Python, uv)
 frontend/   React + TypeScript (Vite)
-compose.yaml  PostgreSQL + api + worker
+compose.yaml  PostgreSQL + migrate + api + worker + frontend (nginx)
 ```
 
 ## 1. Herramientas necesarias (una sola vez)
@@ -67,6 +68,15 @@ uv run uvicorn app.main:app --reload
 
 Comprueba que responde en http://localhost:8000/api/v1/health y que la documentación OpenAPI está en http://localhost:8000/docs.
 
+En otra terminal, el worker de ingesta (planifica las fuentes y atiende las ingestas manuales):
+
+```bash
+cd backend
+uv run python -m app.ingestion.worker
+```
+
+Para procesar solo lo pendiente y salir: `uv run python -m app.ingestion.worker --once`. Sin worker, las ingestas pedidas desde la web se quedan en «Pendiente».
+
 ### Frontend
 
 ```bash
@@ -75,7 +85,7 @@ npm install
 npm run dev
 ```
 
-Abre http://localhost:5173. Las llamadas a `/api` se reenvían al backend en el puerto 8000.
+Abre http://localhost:5173 e inicia sesión con el usuario creado. Las llamadas a `/api` se reenvían al backend en el puerto 8000. Si la base de datos está vacía, ve a **Fuentes** y pulsa «Ejecutar ingesta» en CISA KEV, NVD y URLhaus.
 
 ### Todo con Docker
 
@@ -84,7 +94,7 @@ docker compose up --build
 docker compose run --rm api python -m app.cli create-user admin
 ```
 
-El servicio `migrate` aplica las migraciones antes de arrancar `api` y `worker`.
+El servicio `migrate` aplica las migraciones antes de arrancar `api` y `worker`. La aplicación completa queda en http://localhost:8080 (nginx sirve el frontend y reenvía `/api` a la API); el worker empieza a sincronizar las fuentes nada más arrancar.
 
 ## 3. Comandos de calidad (antes de cada PR)
 

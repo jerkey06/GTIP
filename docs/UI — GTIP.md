@@ -19,7 +19,7 @@ Complementa al PRD (qué debe hacer el producto) y al ADD (cómo está construid
 
 ## 1.2. Estado actual del frontend
 
-A la fecha de este documento, `frontend/src` contiene solo la plantilla inicial de Vite. Ya están instaladas las dependencias que se usarán:
+Todas las pantallas de este documento están implementadas en `frontend/src` (ver [INGESTA-API-FRONTEND.md](INGESTA-API-FRONTEND.md) para la organización del código y las decisiones de §10). Dependencias usadas:
 
 - `react-router-dom` para las rutas.
 - `recharts` para las gráficas del dashboard.
@@ -669,6 +669,8 @@ Los recursos inexistentes dentro de una ruta válida (una CVE que no está, un i
 # 10. Decisiones pendientes que afectan al frontend
 
 Vienen de [PLAN-EQUIPO.md](PLAN-EQUIPO.md) y de este documento. Ninguna impide empezar: la capa `api/` aísla las diferencias de nombres.
+
+**Estado:** resueltas en la implementación; la opción elegida para cada una está en la tabla «Decisiones tomadas» de [INGESTA-API-FRONTEND.md](INGESTA-API-FRONTEND.md). La 6 (reputación bajo demanda) queda fuera del MVP.
 
 1. **Rutas de ingesta y dashboard:** `/ingestions` y `/dashboard` (ADD) o `/ingestion/runs` y `/dashboard/summary` (PRD).
 2. **Estados de ingesta:** `success` (PRD) o `pending` + `completed` (ADD). El badge de §4.8 acepta ambos mientras tanto.
