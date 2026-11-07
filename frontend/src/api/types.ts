@@ -23,6 +23,8 @@ export interface TokenResponse {
 export interface User {
   id: number
   username: string
+  email?: string | null
+  auth_provider?: string
   is_active: boolean
   created_at: string
   last_login_at: string | null

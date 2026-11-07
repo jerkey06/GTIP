@@ -13,6 +13,7 @@ import '@fontsource/space-mono/400.css'
 import '@fontsource/space-mono/700.css'
 import './index.css'
 import { AppLayout } from './layout/AppLayout'
+import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { IndicatorDetailPage } from './pages/IndicatorDetailPage'
 import { IndicatorsPage } from './pages/IndicatorsPage'
@@ -30,6 +31,7 @@ import { VulnerabilityDetailPage } from './pages/VulnerabilityDetailPage'
 // Mapa de pantallas del UI §2.
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/auth/callback', element: <AuthCallbackPage /> },
   {
     element: <RequireAuth />,
     children: [

@@ -21,6 +21,11 @@ export type QueryParams = Record<string, string | number | boolean | null | unde
 export const login = (username: string, password: string) =>
   request<TokenResponse>('POST', '/auth/login', { body: { username, password }, auth: false })
 
+export type AuthProviders = Record<'google' | 'github', boolean>
+
+export const getAuthProviders = (signal?: AbortSignal) =>
+  request<AuthProviders>('GET', '/auth/providers', { auth: false, signal })
+
 export const getMe = (signal?: AbortSignal) => api.get<User>('/auth/me', undefined, signal)
 
 export const getReadiness = (signal?: AbortSignal) =>

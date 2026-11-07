@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     jwt_algorithm: str = "HS256"
 
+    # URL pública del sitio (la del frontend). El proveedor OAuth redirige a
+    # {PUBLIC_URL}/api/v1/auth/oauth/<proveedor>/callback, que el proxy envía a la API.
+    public_url: str = "http://localhost:5173"
+    # Inicio de sesión con Google y GitHub: cada proveedor se activa al definir sus dos valores.
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+
     cisa_kev_enabled: bool = True
     nvd_enabled: bool = True
     urlhaus_enabled: bool = True

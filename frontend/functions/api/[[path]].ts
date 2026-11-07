@@ -12,5 +12,6 @@ export const onRequest = async ({ request, env }: { request: Request; env: Env }
 
   const url = new URL(request.url)
   const target = new URL(url.pathname + url.search, env.BACKEND_URL)
-  return fetch(new Request(target, request))
+  // redirect: 'manual': el 302 hacia Google/GitHub debe llegar al navegador, no seguirlo aquí.
+  return fetch(new Request(target, request), { redirect: 'manual' })
 }

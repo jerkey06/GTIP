@@ -965,3 +965,30 @@ input[aria-invalid='true'] {
   cursor: pointer;
   color: var(--accent);
 }
+
+/* Inicio de sesión social */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+.social-buttons {
+  display: grid;
+  gap: 0.5rem;
+}
+.login-hint {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
