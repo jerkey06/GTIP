@@ -59,6 +59,24 @@ def run_pending(stop: threading.Event | None = None) -> int:
     return processed
 
 
+def run_forever(stop: threading.Event) -> None:
+    """Bucle del worker: planificador periódico + atención de solicitudes pendientes."""
+    settings = get_settings()
+    scheduler = build_scheduler(settings)
+    scheduler.start()
+    try:
+        while not stop.is_set():
+            try:
+                recover_stale_runs()
+                run_pending(stop)
+            except OperationalError:
+                log.exception("No se pudo acceder a PostgreSQL; se reintentará")
+            stop.wait(settings.ingestion_poll_interval_seconds)
+    finally:
+        scheduler.shutdown(wait=False)
+        log.info("Worker detenido")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m app.ingestion.worker")
     parser.add_argument(
@@ -79,19 +97,7 @@ def main(argv: list[str] | None = None) -> None:
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: stop.set())
 
-    scheduler = build_scheduler(settings)
-    scheduler.start()
-    try:
-        while not stop.is_set():
-            try:
-                recover_stale_runs()
-                run_pending(stop)
-            except OperationalError:
-                log.exception("No se pudo acceder a PostgreSQL; se reintentará")
-            stop.wait(settings.ingestion_poll_interval_seconds)
-    finally:
-        scheduler.shutdown(wait=False)
-        log.info("Worker detenido")
+    run_forever(stop)
 
 
 if __name__ == "__main__":

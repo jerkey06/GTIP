@@ -37,21 +37,22 @@ const router = createBrowserRouter([
   { path: '/registro/*', element: CLERK_PUBLISHABLE_KEY ? <ClerkSignUpPage /> : <NotFoundPage /> },
   { path: '/auth/callback', element: <AuthCallbackPage /> },
   {
-    element: <RequireAuth />,
+    // El sitio se puede ver sin iniciar sesión; solo buscar y la configuración la exigen.
+    element: <AppLayout />,
     children: [
+      { index: true, element: <DashboardPage /> },
+      { path: 'vulnerabilidades', element: <VulnerabilitiesPage /> },
+      { path: 'vulnerabilidades/:cveId', element: <VulnerabilityDetailPage /> },
+      { path: 'indicadores', element: <IndicatorsPage /> },
+      { path: 'indicadores/:indicatorId', element: <IndicatorDetailPage /> },
+      { path: 'fuentes', element: <SourcesPage /> },
+      { path: 'fuentes/:sourceId', element: <SourceDetailPage /> },
+      { path: 'ingestas', element: <IngestionsPage /> },
+      { path: 'ingestas/:runId', element: <IngestionDetailPage /> },
       {
-        element: <AppLayout />,
+        element: <RequireAuth />,
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: 'vulnerabilidades', element: <VulnerabilitiesPage /> },
-          { path: 'vulnerabilidades/:cveId', element: <VulnerabilityDetailPage /> },
-          { path: 'indicadores', element: <IndicatorsPage /> },
-          { path: 'indicadores/:indicatorId', element: <IndicatorDetailPage /> },
           { path: 'buscar', element: <SearchPage /> },
-          { path: 'fuentes', element: <SourcesPage /> },
-          { path: 'fuentes/:sourceId', element: <SourceDetailPage /> },
-          { path: 'ingestas', element: <IngestionsPage /> },
-          { path: 'ingestas/:runId', element: <IngestionDetailPage /> },
           { path: 'configuracion', element: <SettingsPage /> },
         ],
       },

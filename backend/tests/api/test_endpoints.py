@@ -68,12 +68,55 @@ def data(db_session):
 
 
 @pytest.mark.parametrize("path", PROTECTED)
-def test_business_endpoints_require_auth(db_session, path):
+def test_business_endpoints_require_auth_when_read_access_is_private(db_session, path, monkeypatch):
+    from app.core.config import get_settings
+    from app.db.session import get_db
+
+    monkeypatch.setenv("PUBLIC_READ_ACCESS", "false")
+    get_settings.cache_clear()
+    app.dependency_overrides[get_db] = lambda: db_session
+    try:
+        assert TestClient(app).get(path).status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+        get_settings.cache_clear()
+
+
+PUBLIC_READS = [p for p in PROTECTED if not p.startswith("/api/v1/search")]
+
+
+@pytest.mark.parametrize("path", PUBLIC_READS)
+def test_read_endpoints_are_public_by_default(db_session, path):
     from app.db.session import get_db
 
     app.dependency_overrides[get_db] = lambda: db_session
     try:
-        assert TestClient(app).get(path).status_code == 401
+        assert TestClient(app).get(path).status_code == 200
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_search_and_ingestion_requests_still_need_login(db_session):
+    from app.db.session import get_db
+
+    app.dependency_overrides[get_db] = lambda: db_session
+    try:
+        client = TestClient(app)
+        assert client.get("/api/v1/search?q=x").status_code == 401
+        assert client.post("/api/v1/ingestions", json={"source_id": 1}).status_code == 401
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_expired_token_is_treated_as_anonymous_on_public_reads(db_session):
+    from app.db.session import get_db
+
+    app.dependency_overrides[get_db] = lambda: db_session
+    try:
+        response = TestClient(app).get(
+            "/api/v1/dashboard", headers={"Authorization": "Bearer token-vencido"}
+        )
+        assert response.status_code == 200
     finally:
         app.dependency_overrides.clear()
 

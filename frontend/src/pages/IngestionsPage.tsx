@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { listIngestions, listSources } from '../api/endpoints'
 import type { IngestionRun, Page } from '../api/types'
 import { DataBlock } from '../components/DataState'
+import { useLoginGate } from '../auth/useLoginGate'
 import { IngestionModal, IngestionNotice } from '../components/IngestionRequest'
 import { Pagination } from '../components/Pagination'
 import { RunsTable } from '../components/RunsTable'
@@ -23,6 +24,7 @@ const STATUSES = [
 export function IngestionsPage() {
   const { get, update, clear, page, pageSize, params } = useUrlState()
   const [modalOpen, setModalOpen] = useState(false)
+  const gate = useLoginGate()
   const [created, setCreated] = useState<IngestionRun | null>(null)
   const sources = useApi(listSources, [])
   const state = useApi(
@@ -49,7 +51,7 @@ export function IngestionsPage() {
       <PageHeader
         title="Historial de ingesta"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setModalOpen(true)} disabled={!sources.data}>
+          <button type="button" className="btn btn-primary" onClick={gate(() => setModalOpen(true))} disabled={!sources.data}>
             Solicitar ingesta
           </button>
         }
