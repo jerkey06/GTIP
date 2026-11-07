@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     abuseipdb_api_key: str | None = None
     otx_api_key: str | None = None
 
+    # Consulta de datos sin iniciar sesión. La búsqueda y solicitar ingestas siguen exigiéndola.
+    # Con PUBLIC_READ_ACCESS=false todo vuelve a requerir sesión.
+    public_read_access: bool = True
+    # Ejecuta el worker de ingesta dentro de la API (hosting sin proceso aparte, p. ej. Render
+    # gratis). En producción con worker propio déjalo en false.
+    embedded_worker: bool = False
+
     ingestion_poll_interval_seconds: int = 10
     ingestion_max_retries: int = 3
     # Frecuencias conservadoras por fuente, en minutos (ADD §8.4). 0 desactiva la planificación.

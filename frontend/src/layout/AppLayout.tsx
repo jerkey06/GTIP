@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/context'
 
 const svg = {
@@ -78,7 +78,8 @@ const NAV = [
 
 /** Layout autenticado: menú lateral y barra superior con búsqueda global (UI §3.1). */
 export function AppLayout() {
-  const { user, logout } = useAuth()
+  const { user, status, logout } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -94,7 +95,10 @@ export function AppLayout() {
     const q = query.trim()
     if (q) {
       closeMenus()
-      navigate(`/buscar?q=${encodeURIComponent(q)}`)
+      const target = `/buscar?q=${encodeURIComponent(q)}`
+      // Buscar exige sesión: sin ella se pide entrar y se vuelve a esta búsqueda.
+      if (status === 'authenticated') navigate(target)
+      else navigate('/login', { state: { from: target } })
     }
   }
 
@@ -142,28 +146,40 @@ export function AppLayout() {
               aria-label="Búsqueda global"
             />
           </form>
-          <div className="user-menu">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              aria-haspopup="menu"
-              aria-expanded={userMenuOpen}
-              onClick={() => setUserMenuOpen((open) => !open)}
-            >
-              <span className="avatar">{ICONS.user}</span>
-              {user?.username ?? 'usuario'} ▾
-            </button>
-            {userMenuOpen && (
-              <div className="dropdown" role="menu">
-                <Link to="/configuracion" role="menuitem" onClick={closeMenus}>
-                  Configuración
-                </Link>
-                <button type="button" role="menuitem" onClick={() => logout()}>
-                  Cerrar sesión
-                </button>
-              </div>
-            )}
-          </div>
+          {status === 'anonymous' ? (
+            <div className="user-menu">
+              <Link
+                to="/login"
+                state={{ from: location.pathname + location.search }}
+                className="btn btn-primary"
+              >
+                Iniciar sesión
+              </Link>
+            </div>
+          ) : (
+            <div className="user-menu">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                aria-haspopup="menu"
+                aria-expanded={userMenuOpen}
+                onClick={() => setUserMenuOpen((open) => !open)}
+              >
+                <span className="avatar">{ICONS.user}</span>
+                {user?.username ?? 'usuario'} ▾
+              </button>
+              {userMenuOpen && (
+                <div className="dropdown" role="menu">
+                  <Link to="/configuracion" role="menuitem" onClick={closeMenus}>
+                    Configuración
+                  </Link>
+                  <button type="button" role="menuitem" onClick={() => logout()}>
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </header>
         <main className="content">
           <Outlet />

@@ -164,3 +164,15 @@ cuenta local se crea la primera vez. Sin Clerk, la app sigue usando el login pro
 Una instancia de desarrollo (`pk_test_`) funciona en `*.pages.dev` pero muestra una marca
 "Development mode". Para producción Clerk exige un dominio propio; en ese caso añade
 `CLERK_ISSUER=https://clerk.tu-dominio.com` y ajusta la CSP (`public/_headers`, `nginx.conf`).
+
+## Acceso público y fuentes ya conectadas
+
+- **Ver sin cuenta:** dashboard, vulnerabilidades, indicadores, fuentes e historial se pueden
+  consultar sin iniciar sesión (`PUBLIC_READ_ACCESS=true`). Iniciar sesión solo hace falta para
+  **buscar** y para **solicitar ingestas**. Con `PUBLIC_READ_ACCESS=false` todo exige sesión.
+- **Fuentes conectadas por el administrador:** las claves (`NVD_API_KEY`, `ABUSEIPDB_API_KEY`,
+  `OTX_API_KEY`…) viven en las variables de entorno del backend; los usuarios no conectan nada.
+  CISA KEV y URLhaus funcionan sin clave.
+- **Sin worker aparte:** con `EMBEDDED_WORKER=true` la API ejecuta el worker de ingesta en un
+  hilo (planificación periódica y solicitudes manuales). En planes gratuitos que duermen el
+  servicio, las ingestas programadas solo corren mientras está despierto.

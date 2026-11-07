@@ -5,6 +5,7 @@ import type { IngestionRun, Source } from '../api/types'
 import { StatusBadge } from '../components/Badges'
 import { DataBlock } from '../components/DataState'
 import { DateText } from '../components/DateText'
+import { useLoginGate } from '../auth/useLoginGate'
 import { IngestionModal, IngestionNotice } from '../components/IngestionRequest'
 import { useApi } from '../hooks/useApi'
 import { PageHeader } from '../layout/AppLayout'
@@ -70,6 +71,7 @@ export function SourceCard({ source, onIngest }: { source: Source; onIngest: (s:
 /** P-08. El estado se basa en las ejecuciones, no en la configuración (PRD §10.5). */
 export function SourcesPage() {
   const [modalSource, setModalSource] = useState<Source | null>(null)
+  const gate = useLoginGate()
   const [created, setCreated] = useState<IngestionRun | null>(null)
   const state = useApi(listSources, [], {
     pollMs: 10000,
@@ -94,7 +96,7 @@ export function SourcesPage() {
         {(sources) => (
           <div className="cards-grid">
             {sources.map((s) => (
-              <SourceCard key={s.id} source={s} onIngest={setModalSource} />
+              <SourceCard key={s.id} source={s} onIngest={(source) => gate(() => setModalSource(source))()} />
             ))}
           </div>
         )}

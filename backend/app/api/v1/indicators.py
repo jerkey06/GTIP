@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.api.dependencies import CurrentUser, DbSession
+from app.api.dependencies import DbSession, ReadUser
 from app.domain.enums import IndicatorType
 from app.domain.indicators import InvalidIndicatorError, detect_type, normalize
 from app.repositories import indicators as indicators_repo
@@ -43,7 +43,7 @@ def build_filters(
 @router.get("", response_model=IndicatorSearchPage)
 def search_indicators(
     db: DbSession,
-    user: CurrentUser,
+    user: ReadUser,
     page: Annotated[Pagination, Depends(pagination)],
     value: Annotated[
         str | None, Query(max_length=2048, description="IP, dominio, URL o hash")
@@ -65,7 +65,7 @@ def search_indicators(
 
 
 @router.get("/{indicator_id}", response_model=IndicatorRead, responses={404: {}})
-def get_indicator(indicator_id: int, db: DbSession, user: CurrentUser) -> IndicatorRead:
+def get_indicator(indicator_id: int, db: DbSession, user: ReadUser) -> IndicatorRead:
     summary = indicators_repo.get_summary(db, indicator_id)
     if summary is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Este indicador no existe en GTIP")
@@ -75,7 +75,7 @@ def get_indicator(indicator_id: int, db: DbSession, user: CurrentUser) -> Indica
 @router.get(
     "/{indicator_id}/observations", response_model=list[ObservationRead], responses={404: {}}
 )
-def list_observations(indicator_id: int, db: DbSession, user: CurrentUser) -> list[ObservationRead]:
+def list_observations(indicator_id: int, db: DbSession, user: ReadUser) -> list[ObservationRead]:
     if indicators_repo.get_by_id(db, indicator_id) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Este indicador no existe en GTIP")
     return [

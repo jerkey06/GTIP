@@ -1,4 +1,7 @@
 import logging
+import threading
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -22,10 +25,36 @@ from app.core.logging import configure_logging
 log = logging.getLogger("gtip.api")
 
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Con EMBEDDED_WORKER=true el worker de ingesta corre como hilo de la propia API."""
+    if not get_settings().embedded_worker:
+        yield
+        return
+    from app.ingestion.worker import run_forever
+
+    stop = threading.Event()
+
+    def run() -> None:
+        try:
+            run_forever(stop)
+        except Exception:
+            log.exception("El worker incrustado se detuvo por un error")
+
+    thread = threading.Thread(target=run, name="gtip-worker", daemon=True)
+    thread.start()
+    log.info("Worker de ingesta incrustado en la API")
+    try:
+        yield
+    finally:
+        stop.set()
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.log_level, component="api")
     app = FastAPI(
+        lifespan=lifespan,
         title="GTIP API",
         version=__version__,
         description="Global Threat Intelligence Platform: vulnerabilidades e indicadores "

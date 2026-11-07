@@ -52,3 +52,23 @@ def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def get_read_user(
+    db: DbSession,
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> User | None:
+    """Usuario opcional para consultar datos. Con PUBLIC_READ_ACCESS=true, sin sesión (o con un
+    token vencido) se atiende igualmente como anónimo; si no, exige sesión como CurrentUser."""
+    if not get_settings().public_read_access:
+        return get_current_user(db, credentials)
+    if credentials is None:
+        return None
+    try:
+        return get_current_user(db, credentials)
+    except HTTPException:
+        return None
+
+
+# Endpoints de solo lectura (dashboard, listados, detalles). No usar en búsqueda ni en escrituras.
+ReadUser = Annotated[User | None, Depends(get_read_user)]

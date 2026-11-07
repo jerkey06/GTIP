@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.api.dependencies import CurrentUser, DbSession
+from app.api.dependencies import DbSession, ReadUser
 from app.domain.records import CVE_ID_PATTERN
 from app.repositories import sources as sources_repo
 from app.repositories import vulnerabilities as vulns_repo
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/vulnerabilities", tags=["vulnerabilities"])
 @router.get("", response_model=Page[VulnerabilityListItem])
 def list_vulnerabilities(
     db: DbSession,
-    user: CurrentUser,
+    user: ReadUser,
     page: Annotated[Pagination, Depends(pagination)],
     q: Annotated[str | None, Query(max_length=200, description="CVE o texto")] = None,
     is_kev: Annotated[bool | None, Query(description="Solo (o sin) explotadas KEV")] = None,
@@ -52,7 +52,7 @@ def list_vulnerabilities(
     response_model=VulnerabilityDetail,
     responses={400: {"description": "CVE mal formada"}, 404: {"description": "No está en GTIP"}},
 )
-def get_vulnerability(cve_id: str, db: DbSession, user: CurrentUser) -> VulnerabilityDetail:
+def get_vulnerability(cve_id: str, db: DbSession, user: ReadUser) -> VulnerabilityDetail:
     cve_id = cve_id.strip().upper()
     if not CVE_ID_PATTERN.match(cve_id):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Identificador CVE inválido")

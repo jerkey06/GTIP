@@ -5,6 +5,7 @@ import type { IngestionRun, Page, Source } from '../api/types'
 import { StatusBadge } from '../components/Badges'
 import { DataBlock, ErrorState, Spinner } from '../components/DataState'
 import { DateText } from '../components/DateText'
+import { useLoginGate } from '../auth/useLoginGate'
 import { IngestionModal, IngestionNotice } from '../components/IngestionRequest'
 import { Pagination } from '../components/Pagination'
 import { RunsTable } from '../components/RunsTable'
@@ -21,6 +22,7 @@ export function SourceDetailPage() {
   const id = useParams().sourceId ?? ''
   const [page, setPage] = useState({ page: 1, size: 20 })
   const [modalOpen, setModalOpen] = useState(false)
+  const gate = useLoginGate()
   const [created, setCreated] = useState<IngestionRun | null>(null)
 
   const source = useApi((signal) => getSource(id, signal), [id], {
@@ -58,7 +60,7 @@ export function SourceDetailPage() {
             className="btn btn-primary"
             disabled={Boolean(blocked)}
             title={blocked ?? undefined}
-            onClick={() => setModalOpen(true)}
+            onClick={gate(() => setModalOpen(true))}
           >
             Ejecutar ingesta
           </button>
