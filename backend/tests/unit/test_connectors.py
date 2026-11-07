@@ -10,7 +10,8 @@ import respx
 from app.connectors import ConnectorError, unavailable_reason
 from app.connectors.cisa_kev import FEED_URL, CisaKevConnector
 from app.connectors.nvd import API_URL, NvdConnector
-from app.connectors.urlhaus import CSV_URL, UrlhausConnector
+from app.connectors.urlhaus import API_URL as URLHAUS_API_URL
+from app.connectors.urlhaus import UrlhausConnector
 from app.core.config import Settings
 from app.domain.enums import IndicatorType
 
@@ -77,14 +78,33 @@ def nvd_item(cve_id: str, **extra) -> dict:
     return {"cve": cve}
 
 
-URLHAUS_CSV = """################################################################
-# abuse.ch URLhaus Database Dump (CSV - recent URLs)           #
-################################################################
-#
-# id,dateadded,url,url_status,last_online,threat,tags,urlhaus_link,reporter
-"3001","2026-10-30 10:00:00","http://Evil.Example:80/bin.sh","online","2026-10-31 12:00:00","malware_download","elf,mirai","https://urlhaus.abuse.ch/url/3001/","reporter1"
-"3002","2026-10-30 11:00:00","esto no es una url","offline","","malware_download","","https://urlhaus.abuse.ch/url/3002/","reporter2"
-"""
+URLHAUS_JSON = {
+    "query_status": "ok",
+    "urls": [
+        {
+            "id": "3001",
+            "urlhaus_reference": "https://urlhaus.abuse.ch/url/3001/",
+            "url": "http://Evil.Example:80/bin.sh",
+            "url_status": "online",
+            "date_added": "2026-10-30 10:00:00 UTC",
+            "last_online": "2026-10-31 12:00:00",
+            "threat": "malware_download",
+            "tags": ["elf", "mirai"],
+            "reporter": "reporter1",
+        },
+        {
+            "id": "3002",
+            "urlhaus_reference": "https://urlhaus.abuse.ch/url/3002/",
+            "url": "esto no es una url",
+            "url_status": "offline",
+            "date_added": "2026-10-30 11:00:00 UTC",
+            "last_online": None,
+            "threat": "malware_download",
+            "tags": None,
+            "reporter": "reporter2",
+        },
+    ],
+}
 
 
 async def no_sleep(_: float) -> None:
@@ -222,10 +242,12 @@ def test_nvd_window_is_incremental_and_capped(settings):
 
 
 @respx.mock
-async def test_urlhaus_parses_csv_and_skips_invalid_rows(settings):
-    respx.get(CSV_URL).respond(text=URLHAUS_CSV)
+async def test_urlhaus_parses_json_and_skips_invalid_entries(settings):
+    settings.urlhaus_auth_key = "clave-de-prueba"
+    route = respx.get(URLHAUS_API_URL).respond(json=URLHAUS_JSON)
     result = await run(UrlhausConnector, settings)
 
+    assert route.calls.last.request.headers["Auth-Key"] == "clave-de-prueba"
     assert len(result.observations) == 1
     assert len(result.record_errors) == 1
     obs = result.observations[0]
@@ -241,10 +263,26 @@ async def test_urlhaus_parses_csv_and_skips_invalid_rows(settings):
 
 
 @respx.mock
-async def test_urlhaus_html_response_is_an_error(settings):
-    respx.get(CSV_URL).respond(text="<html><body>Forbidden</body></html>")
+async def test_urlhaus_unexpected_status_is_an_error(settings):
+    settings.urlhaus_auth_key = "clave-de-prueba"
+    respx.get(URLHAUS_API_URL).respond(json={"query_status": "unknown_auth_key"})
     with pytest.raises(ConnectorError):
         await run(UrlhausConnector, settings)
+
+
+@respx.mock
+async def test_urlhaus_html_response_is_an_error(settings):
+    settings.urlhaus_auth_key = "clave-de-prueba"
+    respx.get(URLHAUS_API_URL).respond(text="<html><body>Forbidden</body></html>")
+    with pytest.raises(ConnectorError):
+        await run(UrlhausConnector, settings)
+
+
+def test_urlhaus_needs_auth_key(settings):
+    settings.urlhaus_auth_key = None
+    assert "URLHAUS_AUTH_KEY" in unavailable_reason("urlhaus", settings)
+    settings.urlhaus_auth_key = "clave"
+    assert unavailable_reason("urlhaus", settings) is None
 
 
 def test_unavailable_reasons(settings):
