@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listVulnerabilities } from '../api/endpoints'
 import { CvssBadge, KevBadge } from '../components/Badges'
@@ -19,13 +19,14 @@ const SORTS = [
   { value: '-created_at', label: 'Registro en GTIP ↓' },
 ]
 
-/** P-03. Filtros, orden y página viven en la URL (UI §4.7). */
 export function VulnerabilitiesPage() {
   const navigate = useNavigate()
   const { get, update, clear, page, pageSize, params } = useUrlState()
   const q = get('q')
   const [text, setText] = useState(q)
   const [syncedQ, setSyncedQ] = useState(q)
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({})
+
   if (q !== syncedQ) {
     setSyncedQ(q)
     setText(q)
@@ -43,13 +44,22 @@ export function VulnerabilitiesPage() {
     page,
     page_size: pageSize,
   }
-  const state = useApi((signal) => listVulnerabilities(query, signal), [params.toString()])
-  const hasFilters = [...params.keys()].some((k) => k !== 'page' && k !== 'page_size')
 
-  const submitSearch = (event: React.FormEvent) => {
+  const state = useApi((signal: AbortSignal) => listVulnerabilities(query, signal), [params.toString()])
+  const hasFilters = [...params.keys()].some((key) => key !== 'page' && key !== 'page_size')
+
+  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const value = text.trim()
+    const value = text?.trim() || ''
     update({ q: CVE_PATTERN.test(value) ? value.toUpperCase() : value })
+  }
+
+  const toggleExpand = (event: React.MouseEvent<HTMLButtonElement>, identifier: string) => {
+    event.stopPropagation()
+    setExpandedRows((previousState: Record<string, boolean>) => ({
+      ...previousState,
+      [identifier]: !previousState[identifier]
+    }))
   }
 
   return (
@@ -60,8 +70,8 @@ export function VulnerabilitiesPage() {
           <input
             type="search"
             placeholder="Buscar por CVE o texto"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
+            value={text || ''}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value)}
             aria-label="Buscar por CVE o texto"
           />
           <button type="submit" className="btn">
@@ -72,18 +82,18 @@ export function VulnerabilitiesPage() {
           <input
             type="checkbox"
             checked={get('is_kev') === 'true'}
-            onChange={(e) => update({ is_kev: e.target.checked })}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => update({ is_kev: event.target.checked })}
           />
           Solo explotadas (KEV)
         </label>
         <label>
           CVSS mínimo{' '}
           <select
-            value={get('has_cvss') === 'false' ? 'none' : get('min_cvss')}
-            onChange={(e) =>
-              e.target.value === 'none'
+            value={get('has_cvss') === 'false' ? 'none' : get('min_cvss') || ''}
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              event.target.value === 'none'
                 ? update({ min_cvss: null, max_cvss: null, has_cvss: 'false' })
-                : update({ min_cvss: e.target.value, max_cvss: null, has_cvss: null })
+                : update({ min_cvss: event.target.value, max_cvss: null, has_cvss: null })
             }
           >
             <option value="">Cualquiera</option>
@@ -97,24 +107,24 @@ export function VulnerabilitiesPage() {
           Publicada desde{' '}
           <input
             type="date"
-            value={get('published_after')}
-            onChange={(e) => update({ published_after: e.target.value })}
+            value={get('published_after') || ''}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => update({ published_after: event.target.value })}
           />
         </label>
         <label>
           hasta{' '}
           <input
             type="date"
-            value={get('published_before')}
-            onChange={(e) => update({ published_before: e.target.value })}
+            value={get('published_before') || ''}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => update({ published_before: event.target.value })}
           />
         </label>
         <label>
           Ordenar por{' '}
-          <select value={get('sort', '-published_at')} onChange={(e) => update({ sort: e.target.value })}>
-            {SORTS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
+          <select value={get('sort') || '-published_at'} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => update({ sort: event.target.value })}>
+            {SORTS.map((sortOption) => (
+              <option key={sortOption.value} value={sortOption.value}>
+                {sortOption.label}
               </option>
             ))}
           </select>
@@ -129,7 +139,7 @@ export function VulnerabilitiesPage() {
       <section className="panel">
         <DataBlock
           state={state}
-          isEmpty={(d) => d.total === 0}
+          isEmpty={(data: any) => data?.total === 0}
           empty={
             hasFilters ? (
               <>
@@ -145,9 +155,9 @@ export function VulnerabilitiesPage() {
             )
           }
         >
-          {(d) => (
+          {(data: any) => (
             <>
-              {q && CVE_PATTERN.test(q) && d.items.some((v) => v.cve_id === q.toUpperCase()) && (
+              {q && CVE_PATTERN.test(q) && data?.items?.some((vulnerability: any) => vulnerability.cve_id === q.toUpperCase()) && (
                 <p className="notice notice-info">
                   <Link to={`/vulnerabilidades/${q.toUpperCase()}`}>Ir al detalle de {q.toUpperCase()}</Link>
                 </p>
@@ -165,27 +175,44 @@ export function VulnerabilitiesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {d.items.map((v) => {
-                      const description = v.description ?? v.kev_short_description
+                    {data?.items?.map((vulnerability: any) => {
+                      const description = vulnerability.description ?? vulnerability.kev_short_description
+                      const isExpanded = expandedRows[vulnerability.cve_id] || false
+
                       return (
-                        <tr key={v.cve_id} onClick={() => navigate(`/vulnerabilidades/${v.cve_id}`)}>
+                        <tr key={vulnerability.cve_id} onClick={() => navigate(`/vulnerabilidades/${vulnerability.cve_id}`)}>
                           <td className="nowrap">
-                            <Link to={`/vulnerabilidades/${v.cve_id}`}>{v.cve_id}</Link>
+                            <Link to={`/vulnerabilidades/${vulnerability.cve_id}`}>{vulnerability.cve_id}</Link>
                           </td>
-                          <td className="description" title={description ?? undefined}>
-                            {description ?? <span className="muted">Sin descripción</span>}
+                          <td className="description-cell" title={description ?? undefined}>
+                            {description ? (
+                              <div className="description-wrapper">
+                                <div className={isExpanded ? 'description-text expanded' : 'description-text clamped'}>
+                                  {description}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn-expand"
+                                  onClick={(event: React.MouseEvent<HTMLButtonElement>) => toggleExpand(event, vulnerability.cve_id)}
+                                >
+                                  {isExpanded ? 'Ver menos' : 'Ver más'}
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="muted">Sin descripción</span>
+                            )}
                           </td>
                           <td className="nowrap">
-                            <CvssBadge score={v.cvss_score} />
+                            <CvssBadge score={vulnerability.cvss_score} />
                           </td>
                           <td>
-                            <KevBadge show={v.is_known_exploited} />
+                            <KevBadge show={vulnerability.is_known_exploited} />
                           </td>
                           <td className="nowrap">
-                            <DateText value={v.published_at} />
+                            <DateText value={vulnerability.published_at} />
                           </td>
                           <td className="nowrap">
-                            <DateText value={v.modified_at} />
+                            <DateText value={vulnerability.modified_at} />
                           </td>
                         </tr>
                       )
@@ -194,10 +221,10 @@ export function VulnerabilitiesPage() {
                 </table>
               </div>
               <Pagination
-                page={d.page}
-                pageSize={d.page_size}
-                total={d.total}
-                onChange={(p, size) => update({ page: p, page_size: size === 20 ? null : size }, false)}
+                page={data?.page}
+                pageSize={data?.page_size}
+                total={data?.total}
+                onChange={(pageNumber: number, size: number) => update({ page: pageNumber, page_size: size === 20 ? null : size }, false)}
               />
             </>
           )}
