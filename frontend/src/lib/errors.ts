@@ -19,6 +19,10 @@ export function errorMessage(error: unknown): string {
       return error.detail ?? 'Ya hay una ingesta pendiente o en ejecución para esta fuente.'
     case 429:
       return 'Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.'
+    case 502:
+    case 503:
+    case 504:
+      return 'El servidor se está iniciando. Espera unos segundos y recarga la página.'
     default:
       return 'El servidor no pudo completar la solicitud. Los datos ya almacenados siguen disponibles.'
   }

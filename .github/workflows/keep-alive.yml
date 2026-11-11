@@ -1,0 +1,16 @@
+name: Keep-alive
+
+# El plan gratuito de Render duerme la API tras ~15 min sin tráfico: el primer visitante
+# espera ~1 min y el worker incrustado deja de ejecutar las ingestas programadas.
+# Este ping cada 10 min la mantiene despierta (un solo servicio cabe en las 750 h/mes).
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/v1/health
+        run: curl --fail --silent --show-error --max-time 120 --retry 3 --retry-delay 10 https://gtip-api.onrender.com/api/v1/health
